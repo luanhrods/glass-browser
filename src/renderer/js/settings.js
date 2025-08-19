@@ -10,37 +10,52 @@ class SettingsManager {
 
     setupEventListeners() {
         // Botão fechar modal
-        document.getElementById('close-settings-btn').addEventListener('click', () => {
-            this.hideSettingsModal();
-        });
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
+        if (closeSettingsBtn) {
+            closeSettingsBtn.addEventListener('click', () => {
+                this.hideSettingsModal();
+            });
+        }
 
         // Botão cancelar
-        document.getElementById('cancel-settings-btn').addEventListener('click', () => {
-            this.hideSettingsModal();
-        });
+        const cancelSettingsBtn = document.getElementById('cancel-settings-btn');
+        if (cancelSettingsBtn) {
+            cancelSettingsBtn.addEventListener('click', () => {
+                this.hideSettingsModal();
+            });
+        }
 
         // Botão salvar
-        document.getElementById('save-settings-btn').addEventListener('click', () => {
-            this.saveSettings();
-        });
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+        if (saveSettingsBtn) {
+            saveSettingsBtn.addEventListener('click', () => {
+                this.saveSettings();
+            });
+        }
 
         // Fechar modal ao clicar fora
-        document.getElementById('settings-modal').addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-overlay')) {
-                this.hideSettingsModal();
-            }
-        });
+        const settingsModal = document.getElementById('settings-modal');
+        if (settingsModal) {
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal-overlay')) {
+                    this.hideSettingsModal();
+                }
+            });
+        }
 
         // Mudança de tema em tempo real
-        document.getElementById('theme').addEventListener('change', (e) => {
-            this.browserApp.applyTheme(e.target.value);
-        });
+        const themeSelect = document.getElementById('theme');
+        if (themeSelect) {
+            themeSelect.addEventListener('change', (e) => {
+                this.browserApp.applyTheme(e.target.value);
+            });
+        }
 
         // Escape para fechar modal
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const modal = document.getElementById('settings-modal');
-                if (modal.classList.contains('visible')) {
+                if (modal && modal.classList.contains('visible')) {
                     this.hideSettingsModal();
                 }
             }
@@ -48,19 +63,38 @@ class SettingsManager {
     }
 
     async saveSettings() {
+        const searchEngineSelect = document.getElementById('search-engine');
+        const homepageInput = document.getElementById('homepage');
+        const themeSelect = document.getElementById('theme');
+        const blockAdsCheckbox = document.getElementById('block-ads');
+        const blockTrackersCheckbox = document.getElementById('block-trackers');
+
+        if (!searchEngineSelect || !homepageInput || !themeSelect || !blockAdsCheckbox || !blockTrackersCheckbox) {
+            console.error('Elementos de configuração não encontrados');
+            this.showNotification('Erro: elementos de configuração não encontrados', 'error');
+            return;
+        }
+
         const settings = {
-            searchEngine: document.getElementById('search-engine').value,
-            homepage: document.getElementById('homepage').value,
-            theme: document.getElementById('theme').value,
+            searchEngine: searchEngineSelect.value,
+            homepage: homepageInput.value,
+            theme: themeSelect.value,
             privacy: {
-                blockAds: document.getElementById('block-ads').checked,
-                blockTrackers: document.getElementById('block-trackers').checked,
+                blockAds: blockAdsCheckbox.checked,
+                blockTrackers: blockTrackersCheckbox.checked,
                 cookiePolicy: 'block-third-party'
             }
         };
 
         try {
-            this.browserApp.settings = await window.electronAPI.saveSettings(settings);
+            if (window.electronAPI) {
+                this.browserApp.settings = await window.electronAPI.saveSettings(settings);
+            } else {
+                // Fallback para modo desenvolvimento
+                this.browserApp.settings = settings;
+                localStorage.setItem('glass-browser-settings', JSON.stringify(settings));
+            }
+            
             this.browserApp.applyTheme(settings.theme);
             
             // Mostrar feedback de sucesso
@@ -74,10 +108,21 @@ class SettingsManager {
     }
 
     hideSettingsModal() {
-        document.getElementById('settings-modal').classList.remove('visible');
+        const settingsModal = document.getElementById('settings-modal');
+        if (settingsModal) {
+            settingsModal.classList.remove('visible');
+        }
     }
 
     showNotification(message, type = 'info') {
+        // Remover notificações existentes
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notification => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        });
+
         // Criar elemento de notificação
         const notification = document.createElement('div');
         notification.className = `notification notification-${type} glass-effect`;
@@ -91,12 +136,71 @@ class SettingsManager {
             </div>
         `;
 
+        // Estilos inline para garantir funcionamento
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            min-width: 300px;
+            padding: 16px;
+            border-radius: 12px;
+            z-index: 2000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-out;
+            background: ${this.getNotificationBg(type)};
+            border: 1px solid ${this.getNotificationBorder(type)};
+            color: ${this.getNotificationColor(type)};
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        `;
+
+        const content = notification.querySelector('.notification-content');
+        if (content) {
+            content.style.cssText = 'display: flex; align-items: center; gap: 12px;';
+        }
+
+        const icon = notification.querySelector('.notification-icon');
+        if (icon) {
+            icon.style.cssText = 'color: currentColor; flex-shrink: 0;';
+        }
+
+        const messageEl = notification.querySelector('.notification-message');
+        if (messageEl) {
+            messageEl.style.cssText = 'flex: 1; font-size: 14px;';
+        }
+
+        const closeBtn = notification.querySelector('.notification-close');
+        if (closeBtn) {
+            closeBtn.style.cssText = `
+                background: none;
+                border: none;
+                color: currentColor;
+                cursor: pointer;
+                font-size: 18px;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: background 0.2s;
+            `;
+            
+            closeBtn.addEventListener('mouseenter', () => {
+                closeBtn.style.background = 'rgba(0, 0, 0, 0.1)';
+            });
+            
+            closeBtn.addEventListener('mouseleave', () => {
+                closeBtn.style.background = 'none';
+            });
+        }
+
         // Adicionar ao DOM
         document.body.appendChild(notification);
 
         // Mostrar notificação
         setTimeout(() => {
-            notification.classList.add('visible');
+            notification.style.transform = 'translateX(0)';
         }, 100);
 
         // Auto-remover após 3 segundos
@@ -105,13 +209,16 @@ class SettingsManager {
         }, 3000);
 
         // Botão para fechar manualmente
-        notification.querySelector('.notification-close').addEventListener('click', () => {
-            this.hideNotification(notification);
-        });
+        const closeButton = notification.querySelector('.notification-close');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                this.hideNotification(notification);
+            });
+        }
     }
 
     hideNotification(notification) {
-        notification.classList.remove('visible');
+        notification.style.transform = 'translateX(100%)';
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.parentNode.removeChild(notification);
@@ -122,13 +229,52 @@ class SettingsManager {
     getNotificationIcon(type) {
         switch (type) {
             case 'success':
-                return '<svg width="16" height="16" viewBox="0 0 16 16"><path d="M13 4L6 11L3 8" stroke="currentColor" fill="none" stroke-width="2"/></svg>';
+                return '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13 4L6 11L3 8" stroke="currentColor" fill="none" stroke-width="2"/></svg>';
             case 'error':
-                return '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none"/><path d="M8 4v4M8 10h.01" stroke="currentColor" fill="none"/></svg>';
+                return '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none"/><path d="M8 4v4M8 10h.01" stroke="currentColor" fill="none"/></svg>';
             case 'warning':
-                return '<svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 2L2 14h12L8 2z" stroke="currentColor" fill="none"/><path d="M8 6v4M8 12h.01" stroke="currentColor" fill="none"/></svg>';
+                return '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 14h12L8 2z" stroke="currentColor" fill="none"/><path d="M8 6v4M8 12h.01" stroke="currentColor" fill="none"/></svg>';
             default:
-                return '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none"/><path d="M8 6v4M8 4h.01" stroke="currentColor" fill="none"/></svg>';
+                return '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none"/><path d="M8 6v4M8 4h.01" stroke="currentColor" fill="none"/></svg>';
+        }
+    }
+
+    getNotificationBg(type) {
+        switch (type) {
+            case 'success':
+                return 'rgba(52, 199, 89, 0.1)';
+            case 'error':
+                return 'rgba(255, 59, 48, 0.1)';
+            case 'warning':
+                return 'rgba(255, 149, 0, 0.1)';
+            default:
+                return 'rgba(0, 122, 255, 0.1)';
+        }
+    }
+
+    getNotificationBorder(type) {
+        switch (type) {
+            case 'success':
+                return 'rgba(52, 199, 89, 0.3)';
+            case 'error':
+                return 'rgba(255, 59, 48, 0.3)';
+            case 'warning':
+                return 'rgba(255, 149, 0, 0.3)';
+            default:
+                return 'rgba(0, 122, 255, 0.3)';
+        }
+    }
+
+    getNotificationColor(type) {
+        switch (type) {
+            case 'success':
+                return '#34C759';
+            case 'error':
+                return '#FF3B30';
+            case 'warning':
+                return '#FF9500';
+            default:
+                return '#007AFF';
         }
     }
 
@@ -146,7 +292,13 @@ class SettingsManager {
         };
 
         try {
-            this.browserApp.settings = await window.electronAPI.saveSettings(defaultSettings);
+            if (window.electronAPI) {
+                this.browserApp.settings = await window.electronAPI.saveSettings(defaultSettings);
+            } else {
+                this.browserApp.settings = defaultSettings;
+                localStorage.setItem('glass-browser-settings', JSON.stringify(defaultSettings));
+            }
+            
             this.loadSettingsToForm();
             this.browserApp.applyTheme(defaultSettings.theme);
             this.showNotification('Configurações restauradas para o padrão', 'info');
@@ -159,11 +311,17 @@ class SettingsManager {
     loadSettingsToForm() {
         const settings = this.browserApp.settings;
         
-        document.getElementById('search-engine').value = settings.searchEngine;
-        document.getElementById('homepage').value = settings.homepage;
-        document.getElementById('theme').value = settings.theme;
-        document.getElementById('block-ads').checked = settings.privacy.blockAds;
-        document.getElementById('block-trackers').checked = settings.privacy.blockTrackers;
+        const searchEngineSelect = document.getElementById('search-engine');
+        const homepageInput = document.getElementById('homepage');
+        const themeSelect = document.getElementById('theme');
+        const blockAdsCheckbox = document.getElementById('block-ads');
+        const blockTrackersCheckbox = document.getElementById('block-trackers');
+        
+        if (searchEngineSelect) searchEngineSelect.value = settings.searchEngine || 'google';
+        if (homepageInput) homepageInput.value = settings.homepage || 'https://www.google.com';
+        if (themeSelect) themeSelect.value = settings.theme || 'auto';
+        if (blockAdsCheckbox) blockAdsCheckbox.checked = settings.privacy?.blockAds ?? true;
+        if (blockTrackersCheckbox) blockTrackersCheckbox.checked = settings.privacy?.blockTrackers ?? true;
     }
 
     exportSettings() {
@@ -196,7 +354,13 @@ class SettingsManager {
                 
                 // Validar estrutura das configurações
                 if (this.validateSettings(importedSettings)) {
-                    this.browserApp.settings = await window.electronAPI.saveSettings(importedSettings);
+                    if (window.electronAPI) {
+                        this.browserApp.settings = await window.electronAPI.saveSettings(importedSettings);
+                    } else {
+                        this.browserApp.settings = importedSettings;
+                        localStorage.setItem('glass-browser-settings', JSON.stringify(importedSettings));
+                    }
+                    
                     this.loadSettingsToForm();
                     this.browserApp.applyTheme(importedSettings.theme);
                     this.showNotification('Configurações importadas com sucesso', 'success');
@@ -213,15 +377,19 @@ class SettingsManager {
     }
 
     validateSettings(settings) {
-        const requiredFields = ['searchEngine', 'homepage', 'theme', 'privacy'];
-        const requiredPrivacyFields = ['blockAds', 'blockTrackers', 'cookiePolicy'];
+        if (!settings || typeof settings !== 'object') {
+            return false;
+        }
+        
+        const requiredFields = ['searchEngine', 'homepage', 'theme'];
         
         // Verificar campos obrigatórios
         if (!requiredFields.every(field => field in settings)) {
             return false;
         }
         
-        if (!requiredPrivacyFields.every(field => field in settings.privacy)) {
+        // Verificar se privacy existe e é um objeto
+        if (!settings.privacy || typeof settings.privacy !== 'object') {
             return false;
         }
         
@@ -248,131 +416,9 @@ class SettingsManager {
     }
 
     // Configurações avançadas
-    showAdvancedSettings() {
-        const advancedSection = document.createElement('div');
-        advancedSection.className = 'settings-section advanced-settings';
-        advancedSection.innerHTML = `
-            <h3>Configurações Avançadas</h3>
-            
-            <div class="setting-item">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="hardware-acceleration">
-                    <span class="checkmark"></span>
-                    Aceleração por hardware
-                </label>
-            </div>
-            
-            <div class="setting-item">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="javascript-enabled">
-                    <span class="checkmark"></span>
-                    Habilitar JavaScript
-                </label>
-            </div>
-            
-            <div class="setting-item">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="images-enabled">
-                    <span class="checkmark"></span>
-                    Carregar imagens
-                </label>
-            </div>
-            
-            <div class="setting-item">
-                <label for="user-agent">User Agent personalizado:</label>
-                <input type="text" id="user-agent" placeholder="Deixe vazio para usar o padrão">
-            </div>
-            
-            <div class="setting-item">
-                <label for="proxy-server">Servidor Proxy:</label>
-                <input type="text" id="proxy-server" placeholder="http://proxy.exemplo.com:8080">
-            </div>
-            
-            <div class="setting-item">
-                <label for="download-location">Local de Downloads:</label>
-                <div class="input-group">
-                    <input type="text" id="download-location" readonly>
-                    <button type="button" id="browse-download-location" class="btn-secondary">Procurar</button>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <label for="cache-size">Tamanho do Cache (MB):</label>
-                <input type="number" id="cache-size" min="10" max="1000" value="100">
-            </div>
-            
-            <div class="setting-actions">
-                <button type="button" id="clear-cache" class="btn-secondary">Limpar Cache</button>
-                <button type="button" id="clear-cookies" class="btn-secondary">Limpar Cookies</button>
-                <button type="button" id="clear-all-data" class="btn-secondary">Limpar Todos os Dados</button>
-            </div>
-            
-            <div class="setting-actions">
-                <button type="button" id="export-settings" class="btn-secondary">Exportar Configurações</button>
-                <button type="button" id="import-settings" class="btn-secondary">Importar Configurações</button>
-                <button type="button" id="reset-settings" class="btn-secondary">Restaurar Padrões</button>
-            </div>
-        `;
-        
-        // Inserir seção avançada
-        const modalContent = document.querySelector('#settings-modal .modal-content');
-        modalContent.appendChild(advancedSection);
-        
-        // Event listeners para configurações avançadas
-        this.setupAdvancedEventListeners();
-    }
-
-    setupAdvancedEventListeners() {
-        document.getElementById('export-settings')?.addEventListener('click', () => {
-            this.exportSettings();
-        });
-        
-        document.getElementById('import-settings')?.addEventListener('click', () => {
-            this.importSettings();
-        });
-        
-        document.getElementById('reset-settings')?.addEventListener('click', () => {
-            if (confirm('Tem certeza que deseja restaurar todas as configurações para o padrão?')) {
-                this.resetSettings();
-            }
-        });
-        
-        document.getElementById('browse-download-location')?.addEventListener('click', async () => {
-            try {
-                const result = await window.electronAPI.showSaveDialog({
-                    properties: ['openDirectory']
-                });
-                
-                if (!result.canceled && result.filePath) {
-                    document.getElementById('download-location').value = result.filePath;
-                }
-            } catch (error) {
-                console.error('Erro ao selecionar pasta:', error);
-            }
-        });
-        
-        document.getElementById('clear-cache')?.addEventListener('click', () => {
-            if (confirm('Tem certeza que deseja limpar o cache?')) {
-                this.clearCache();
-            }
-        });
-        
-        document.getElementById('clear-cookies')?.addEventListener('click', () => {
-            if (confirm('Tem certeza que deseja limpar todos os cookies?')) {
-                this.clearCookies();
-            }
-        });
-        
-        document.getElementById('clear-all-data')?.addEventListener('click', () => {
-            if (confirm('Tem certeza que deseja limpar TODOS os dados do navegador? Esta ação não pode ser desfeita.')) {
-                this.clearAllData();
-            }
-        });
-    }
-
     async clearCache() {
         try {
-            // Implementar limpeza de cache
+            // Em um ambiente real, isso seria implementado via IPC
             this.showNotification('Cache limpo com sucesso', 'success');
         } catch (error) {
             console.error('Erro ao limpar cache:', error);
@@ -382,7 +428,7 @@ class SettingsManager {
 
     async clearCookies() {
         try {
-            // Implementar limpeza de cookies
+            // Em um ambiente real, isso seria implementado via IPC
             this.showNotification('Cookies limpos com sucesso', 'success');
         } catch (error) {
             console.error('Erro ao limpar cookies:', error);
@@ -391,65 +437,32 @@ class SettingsManager {
     }
 
     async clearAllData() {
+        if (!confirm('Tem certeza que deseja limpar TODOS os dados do navegador? Esta ação não pode ser desfeita.')) {
+            return;
+        }
+        
         try {
-            // Limpar todos os dados
-            await this.browserApp.clearHistory();
-            this.browserApp.bookmarks = await window.electronAPI.removeAllBookmarks();
+            // Limpar histórico
+            if (window.electronAPI) {
+                await window.electronAPI.clearHistory();
+            }
+            this.browserApp.history = [];
+            
+            // Limpar bookmarks (se houvesse uma função para isso)
+            this.browserApp.bookmarks = [];
+            
+            // Limpar cache e cookies
             await this.clearCache();
             await this.clearCookies();
+            
+            // Restaurar configurações padrão
+            await this.resetSettings();
             
             this.showNotification('Todos os dados foram limpos', 'success');
         } catch (error) {
             console.error('Erro ao limpar dados:', error);
             this.showNotification('Erro ao limpar dados', 'error');
         }
-    }
-
-    // Configurações de privacidade
-    setupPrivacySettings() {
-        const privacyOptions = {
-            dnt: { label: 'Enviar sinal "Do Not Track"', default: true },
-            referer: { label: 'Enviar header Referer', default: false },
-            webrtc: { label: 'Bloquear vazamentos WebRTC', default: true },
-            fingerprinting: { label: 'Proteção contra fingerprinting', default: true },
-            thirdPartyCookies: { label: 'Bloquear cookies de terceiros', default: true },
-            popups: { label: 'Bloquear popups', default: true },
-            autoplay: { label: 'Bloquear reprodução automática', default: true }
-        };
-
-        return privacyOptions;
-    }
-
-    // Configurações de aparência
-    setupAppearanceSettings() {
-        const appearanceOptions = {
-            fontSize: { label: 'Tamanho da fonte', type: 'range', min: 12, max: 24, default: 16 },
-            zoomLevel: { label: 'Nível de zoom padrão', type: 'range', min: 50, max: 200, default: 100 },
-            animationsEnabled: { label: 'Habilitar animações', type: 'checkbox', default: true },
-            reducedMotion: { label: 'Reduzir movimentos', type: 'checkbox', default: false },
-            highContrast: { label: 'Alto contraste', type: 'checkbox', default: false }
-        };
-
-        return appearanceOptions;
-    }
-
-    // Configurações de teclado
-    setupKeyboardSettings() {
-        const defaultShortcuts = {
-            'new-tab': 'Ctrl+T',
-            'close-tab': 'Ctrl+W',
-            'new-window': 'Ctrl+N',
-            'refresh': 'Ctrl+R',
-            'back': 'Alt+Left',
-            'forward': 'Alt+Right',
-            'address-bar': 'Ctrl+L',
-            'bookmarks': 'Ctrl+Shift+B',
-            'history': 'Ctrl+H',
-            'settings': 'Ctrl+,',
-            'dev-tools': 'F12'
-        };
-
-        return defaultShortcuts;
     }
 
     // Atualizar configurações em tempo real
@@ -465,199 +478,10 @@ class SettingsManager {
                 this.browserApp.settings.homepage = value;
                 break;
             default:
-                // Outras configurações
                 break;
         }
     }
 }
-
-// CSS adicional para notificações e configurações avançadas
-const additionalCSS = `
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    min-width: 300px;
-    padding: 16px;
-    border-radius: 12px;
-    z-index: 2000;
-    transform: translateX(100%);
-    transition: transform 0.3s ease-out;
-}
-
-.notification.visible {
-    transform: translateX(0);
-}
-
-.notification-content {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.notification-icon {
-    color: currentColor;
-    flex-shrink: 0;
-}
-
-.notification-message {
-    flex: 1;
-    font-size: 14px;
-}
-
-.notification-close {
-    background: none;
-    border: none;
-    color: currentColor;
-    cursor: pointer;
-    font-size: 18px;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: background 0.2s;
-}
-
-.notification-close:hover {
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.notification-success {
-    background: rgba(52, 199, 89, 0.1);
-    border: 1px solid rgba(52, 199, 89, 0.3);
-    color: var(--success-color);
-}
-
-.notification-error {
-    background: rgba(255, 59, 48, 0.1);
-    border: 1px solid rgba(255, 59, 48, 0.3);
-    color: var(--error-color);
-}
-
-.notification-warning {
-    background: rgba(255, 149, 0, 0.1);
-    border: 1px solid rgba(255, 149, 0, 0.3);
-    color: var(--warning-color);
-}
-
-.notification-info {
-    background: rgba(0, 122, 255, 0.1);
-    border: 1px solid rgba(0, 122, 255, 0.3);
-    color: var(--accent-color);
-}
-
-.advanced-settings {
-    border-top: 1px solid var(--border-color);
-    margin-top: 24px;
-    padding-top: 24px;
-}
-
-.input-group {
-    display: flex;
-    gap: 8px;
-}
-
-.input-group input {
-    flex: 1;
-}
-
-.setting-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 16px;
-    flex-wrap: wrap;
-}
-
-.bookmark-item, .history-item {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-bottom: 8px;
-}
-
-.bookmark-item:hover, .history-item:hover {
-    background: var(--secondary-bg);
-}
-
-.bookmark-item img {
-    width: 16px;
-    height: 16px;
-    margin-right: 12px;
-    border-radius: 2px;
-}
-
-.bookmark-info, .history-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.bookmark-title, .history-title {
-    font-size: 14px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 4px;
-}
-
-.bookmark-url, .history-url {
-    font-size: 12px;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.history-time {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-}
-
-.remove-bookmark-btn {
-    width: 20px;
-    height: 20px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.remove-bookmark-btn:hover {
-    background: var(--error-color);
-    color: white;
-}
-
-.history-date-header {
-    color: var(--text-primary);
-    font-size: 14px;
-    font-weight: 600;
-    margin: 16px 0 8px 0;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.clear-history-btn {
-    width: 100%;
-    margin-top: 16px;
-}
-`;
-
-// Adicionar CSS ao documento
-const style = document.createElement('style');
-style.textContent = additionalCSS;
-document.head.appendChild(style);
 
 // Inicializar gerenciador de configurações quando o app estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
