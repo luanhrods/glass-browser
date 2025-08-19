@@ -22,8 +22,16 @@ class GlassBrowserApp {
         
         this.setupEventListeners();
         this.setupKeyboardShortcuts();
-        this.createNewTab('https://www.google.com');
         this.applyTheme();
+        
+        // Mostrar controles do Windows se necessário
+        if (window.electronAPI && window.electronAPI.platform === 'win32') {
+            const titlebar = document.getElementById('titlebar');
+            if (titlebar) titlebar.style.display = 'flex';
+        }
+        
+        // Criar primeira aba
+        this.createNewTab('https://www.google.com');
     }
 
     async loadSettings() {
@@ -65,68 +73,95 @@ class GlassBrowserApp {
     setupEventListeners() {
         // Barra de endereços
         const addressInput = document.getElementById('address-input');
-        addressInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                this.navigateToUrl(addressInput.value);
-            }
-        });
+        if (addressInput) {
+            addressInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.navigateToUrl(addressInput.value);
+                }
+            });
 
-        addressInput.addEventListener('input', (e) => {
-            this.showSuggestions(e.target.value);
-        });
+            addressInput.addEventListener('input', (e) => {
+                this.showSuggestions(e.target.value);
+            });
+        }
 
         // Botões de navegação
-        document.getElementById('back-btn').addEventListener('click', () => this.goBack());
-        document.getElementById('forward-btn').addEventListener('click', () => this.goForward());
-        document.getElementById('refresh-btn').addEventListener('click', () => this.refresh());
+        const backBtn = document.getElementById('back-btn');
+        const forwardBtn = document.getElementById('forward-btn');
+        const refreshBtn = document.getElementById('refresh-btn');
+        
+        if (backBtn) backBtn.addEventListener('click', () => this.goBack());
+        if (forwardBtn) forwardBtn.addEventListener('click', () => this.goForward());
+        if (refreshBtn) refreshBtn.addEventListener('click', () => this.refresh());
 
         // Bookmarks
-        document.getElementById('bookmark-btn').addEventListener('click', () => this.toggleBookmark());
-        document.getElementById('bookmarks-btn').addEventListener('click', () => this.showBookmarks());
+        const bookmarkBtn = document.getElementById('bookmark-btn');
+        const bookmarksBtn = document.getElementById('bookmarks-btn');
+        
+        if (bookmarkBtn) bookmarkBtn.addEventListener('click', () => this.toggleBookmark());
+        if (bookmarksBtn) bookmarksBtn.addEventListener('click', () => this.showBookmarks());
 
         // Histórico
-        document.getElementById('history-btn').addEventListener('click', () => this.showHistory());
+        const historyBtn = document.getElementById('history-btn');
+        if (historyBtn) historyBtn.addEventListener('click', () => this.showHistory());
 
         // Configurações
-        document.getElementById('settings-btn').addEventListener('click', () => this.showSettings());
+        const settingsBtn = document.getElementById('settings-btn');
+        if (settingsBtn) settingsBtn.addEventListener('click', () => this.showSettings());
 
         // Nova aba
-        document.getElementById('new-tab-btn').addEventListener('click', () => {
-            this.createNewTab();
-        });
+        const newTabBtn = document.getElementById('new-tab-btn');
+        if (newTabBtn) {
+            newTabBtn.addEventListener('click', () => {
+                this.createNewTab();
+            });
+        }
 
         // Sidebar
-        document.getElementById('close-sidebar-btn').addEventListener('click', () => {
-            this.hideSidebar();
-        });
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        if (closeSidebarBtn) {
+            closeSidebarBtn.addEventListener('click', () => {
+                this.hideSidebar();
+            });
+        }
 
         // Controles da barra de título (Windows)
-        if (window.electronAPI.platform === 'win32') {
-            document.getElementById('minimize-btn')?.addEventListener('click', () => {
-                // Implementar minimizar
+        if (window.electronAPI && window.electronAPI.platform === 'win32') {
+            const minimizeBtn = document.getElementById('minimize-btn');
+            const maximizeBtn = document.getElementById('maximize-btn');
+            const closeBtn = document.getElementById('close-btn');
+            
+            if (minimizeBtn) minimizeBtn.addEventListener('click', () => {
+                // Implementar minimizar via IPC se necessário
+                console.log('Minimize clicked');
             });
-            document.getElementById('maximize-btn')?.addEventListener('click', () => {
-                // Implementar maximizar
+            if (maximizeBtn) maximizeBtn.addEventListener('click', () => {
+                // Implementar maximizar via IPC se necessário
+                console.log('Maximize clicked');
             });
-            document.getElementById('close-btn')?.addEventListener('click', () => {
+            if (closeBtn) closeBtn.addEventListener('click', () => {
                 window.close();
             });
         }
 
-        // Listener para mudanças de tema
-        window.electronAPI.on('theme-changed', (event, theme) => {
-            this.applyTheme(theme);
-        });
+        // Listeners para eventos do main process
+        if (window.electronAPI) {
+            window.electronAPI.on('new-tab', () => {
+                this.createNewTab();
+            });
 
-        // Listener para nova aba externa
-        window.electronAPI.on('new-tab', () => {
-            this.createNewTab();
-        });
-
-        // Listener para navegação externa
-        window.electronAPI.on('navigate-to', (event, url) => {
-            this.navigateToUrl(url);
-        });
+            window.electronAPI.on('navigate-to', (event, url) => {
+                this.navigateToUrl(url);
+            });
+            
+            window.electronAPI.on('go-back', () => this.goBack());
+            window.electronAPI.on('go-forward', () => this.goForward());
+            window.electronAPI.on('reload-page', () => this.refresh());
+            
+            window.electronAPI.on('theme-changed', (event, theme) => {
+                this.applyTheme(theme);
+            });
+        }
     }
 
     setupKeyboardShortcuts() {
@@ -145,17 +180,14 @@ class GlassBrowserApp {
                 }
             }
             
-            // Ctrl/Cmd + N - Nova janela
-            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                e.preventDefault();
-                window.electronAPI.newWindow();
-            }
-            
             // Ctrl/Cmd + L - Focar barra de endereços
             if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
                 e.preventDefault();
-                document.getElementById('address-input').focus();
-                document.getElementById('address-input').select();
+                const addressInput = document.getElementById('address-input');
+                if (addressInput) {
+                    addressInput.focus();
+                    addressInput.select();
+                }
             }
             
             // Ctrl/Cmd + R - Refresh
@@ -181,34 +213,6 @@ class GlassBrowserApp {
                 e.preventDefault();
                 this.toggleBookmark();
             }
-            
-            // Ctrl/Cmd + H - Mostrar histórico
-            if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
-                e.preventDefault();
-                this.showHistory();
-            }
-            
-            // Ctrl/Cmd + Shift + B - Mostrar bookmarks
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'B') {
-                e.preventDefault();
-                this.showBookmarks();
-            }
-            
-            // Ctrl/Cmd + 1-9 - Mudar para aba específica
-            if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '9') {
-                e.preventDefault();
-                const tabIndex = parseInt(e.key) - 1;
-                const tabIds = Array.from(this.tabs.keys());
-                if (tabIds[tabIndex]) {
-                    this.switchToTab(tabIds[tabIndex]);
-                }
-            }
-            
-            // F12 - DevTools
-            if (e.key === 'F12') {
-                e.preventDefault();
-                this.toggleDevTools();
-            }
         });
     }
 
@@ -221,23 +225,24 @@ class GlassBrowserApp {
         webview.id = `webview-${tabId}`;
         webview.className = 'webview';
         webview.src = initialUrl;
-        webview.preload = './js/webview-preload.js';
         webview.allowpopups = true;
-        webview.nodeintegration = false;
-        webview.contextIsolation = true;
+        webview.style.display = 'none'; // Oculto inicialmente
         
         // Adicionar webview ao container
-        document.getElementById('webview-container').appendChild(webview);
+        const webviewContainer = document.getElementById('webview-container');
+        if (webviewContainer) {
+            webviewContainer.appendChild(webview);
+        }
         
         // Criar elemento de aba
-        const tabElement = this.createTabElement(tabId, 'Carregando...', null);
+        const tabElement = this.createTabElement(tabId, 'Nova aba', null);
         
         // Adicionar ao mapa de abas
         this.tabs.set(tabId, {
             element: tabElement,
             webview: webview,
             url: initialUrl,
-            title: 'Carregando...',
+            title: 'Nova aba',
             favicon: null,
             canGoBack: false,
             canGoForward: false,
@@ -255,6 +260,7 @@ class GlassBrowserApp {
 
     createTabElement(tabId, title, favicon) {
         const tabsContainer = document.getElementById('tabs-container');
+        if (!tabsContainer) return null;
         
         const tab = document.createElement('div');
         tab.className = 'tab';
@@ -262,9 +268,9 @@ class GlassBrowserApp {
         
         const faviconElement = document.createElement('img');
         faviconElement.className = 'tab-favicon';
-        faviconElement.src = favicon || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMkM0LjY4NiAyIDIgNC42ODYgMiA4QzIgMTEuMzE0IDQuNjg2IDE0IDggMTRDMTEuMzE0IDE0IDE0IDExLjMxNCAxNCA4QzE0IDQuNjg2IDExLjMxNCAyIDggMloiIGZpbGw9IiM5OTk5OTkiLz4KPC9zdmc+';
+        faviconElement.src = favicon || this.getDefaultFavicon();
         faviconElement.onerror = () => {
-            faviconElement.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMkM0LjY4NiAyIDIgNC42ODYgMiA4QzIgMTEuMzE0IDQuNjg2IDE0IDggMTRDMTEuMzE0IDE0IDE0IDExLjMxNCAxNCA4QzE0IDQuNjg2IDExLjMxNCAyIDggMloiIGZpbGw9IiM5OTk5OTkiLz4KPC9zdmc+';
+            faviconElement.src = this.getDefaultFavicon();
         };
         
         const titleElement = document.createElement('span');
@@ -273,7 +279,7 @@ class GlassBrowserApp {
         
         const closeButton = document.createElement('button');
         closeButton.className = 'tab-close';
-        closeButton.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none"/></svg>';
+        closeButton.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none"/></svg>';
         closeButton.addEventListener('click', (e) => {
             e.stopPropagation();
             this.closeTab(tabId);
@@ -287,19 +293,18 @@ class GlassBrowserApp {
             this.switchToTab(tabId);
         });
         
-        // Adicionar context menu para abas
-        tab.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            this.showTabContextMenu(e, tabId);
-        });
-        
         tabsContainer.appendChild(tab);
         
         return tab;
     }
 
+    getDefaultFavicon() {
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMkM0LjY4NiAyIDIgNC42ODYgMiA4QzIgMTEuMzE0IDQuNjg2IDE0IDggMTRDMTEuMzE0IDE0IDE0IDExLjMxNCAxNCA4QzE0IDQuNjg2IDExLjMxNCAyIDggMloiIGZpbGw9IiM5OTk5OTkiLz4KPC9zdmc+';
+    }
+
     setupWebviewEvents(webview, tabId) {
         const tab = this.tabs.get(tabId);
+        if (!tab) return;
         
         webview.addEventListener('dom-ready', () => {
             tab.isLoading = false;
@@ -318,31 +323,44 @@ class GlassBrowserApp {
         });
         
         webview.addEventListener('page-title-updated', (e) => {
-            tab.title = e.title;
-            tab.element.querySelector('.tab-title').textContent = e.title;
+            tab.title = e.title || 'Sem título';
+            const titleElement = tab.element?.querySelector('.tab-title');
+            if (titleElement) {
+                titleElement.textContent = tab.title;
+            }
+            
             if (tabId === this.activeTabId) {
-                document.title = `${e.title} - Glass Browser`;
+                document.title = `${tab.title} - Glass Browser`;
             }
         });
         
         webview.addEventListener('page-favicon-updated', (e) => {
             if (e.favicons && e.favicons.length > 0) {
                 tab.favicon = e.favicons[0];
-                tab.element.querySelector('.tab-favicon').src = e.favicons[0];
+                const faviconElement = tab.element?.querySelector('.tab-favicon');
+                if (faviconElement) {
+                    faviconElement.src = e.favicons[0];
+                }
             }
         });
         
         webview.addEventListener('will-navigate', (e) => {
             tab.url = e.url;
             if (tabId === this.activeTabId) {
-                document.getElementById('address-input').value = e.url;
+                const addressInput = document.getElementById('address-input');
+                if (addressInput) {
+                    addressInput.value = e.url;
+                }
             }
         });
         
         webview.addEventListener('did-navigate', (e) => {
             tab.url = e.url;
             if (tabId === this.activeTabId) {
-                document.getElementById('address-input').value = e.url;
+                const addressInput = document.getElementById('address-input');
+                if (addressInput) {
+                    addressInput.value = e.url;
+                }
                 this.updateNavigationButtons();
                 this.updateSecurityIndicator(e.url);
                 
@@ -358,10 +376,6 @@ class GlassBrowserApp {
             e.preventDefault();
             this.createNewTab(e.url);
         });
-        
-        webview.addEventListener('context-menu', (e) => {
-            this.showContextMenu(e);
-        });
     }
 
     switchToTab(tabId) {
@@ -369,20 +383,28 @@ class GlassBrowserApp {
         if (this.activeTabId) {
             const currentTab = this.tabs.get(this.activeTabId);
             if (currentTab) {
-                currentTab.element.classList.remove('active');
-                currentTab.webview.style.display = 'none';
+                currentTab.element?.classList.remove('active');
+                if (currentTab.webview) {
+                    currentTab.webview.style.display = 'none';
+                }
             }
         }
         
         // Ativar nova aba
         const newTab = this.tabs.get(tabId);
         if (newTab) {
-            newTab.element.classList.add('active');
-            newTab.webview.style.display = 'block';
+            newTab.element?.classList.add('active');
+            if (newTab.webview) {
+                newTab.webview.style.display = 'block';
+            }
             this.activeTabId = tabId;
             
             // Atualizar UI
-            document.getElementById('address-input').value = newTab.url;
+            const addressInput = document.getElementById('address-input');
+            if (addressInput) {
+                addressInput.value = newTab.url;
+            }
+            
             document.title = `${newTab.title} - Glass Browser`;
             this.updateNavigationButtons();
             this.updateSecurityIndicator(newTab.url);
@@ -395,8 +417,12 @@ class GlassBrowserApp {
         if (!tab) return;
         
         // Remover elementos do DOM
-        tab.element.remove();
-        tab.webview.remove();
+        if (tab.element && tab.element.parentNode) {
+            tab.element.parentNode.removeChild(tab.element);
+        }
+        if (tab.webview && tab.webview.parentNode) {
+            tab.webview.parentNode.removeChild(tab.webview);
+        }
         
         // Remover do mapa
         this.tabs.delete(tabId);
@@ -431,13 +457,17 @@ class GlassBrowserApp {
         
         tab.webview.src = url;
         tab.url = url;
-        document.getElementById('address-input').value = url;
+        
+        const addressInput = document.getElementById('address-input');
+        if (addressInput) {
+            addressInput.value = url;
+        }
     }
 
     isValidUrl(string) {
         try {
             new URL(string.startsWith('http') ? string : 'https://' + string);
-            return true;
+            return string.includes('.');
         } catch (_) {
             return false;
         }
@@ -476,16 +506,19 @@ class GlassBrowserApp {
         const backBtn = document.getElementById('back-btn');
         const forwardBtn = document.getElementById('forward-btn');
         
-        backBtn.disabled = !tab.webview.canGoBack();
-        forwardBtn.disabled = !tab.webview.canGoForward();
+        if (backBtn) backBtn.disabled = !tab.webview.canGoBack();
+        if (forwardBtn) forwardBtn.disabled = !tab.webview.canGoForward();
     }
 
     updateSecurityIndicator(url) {
         const indicator = document.getElementById('security-indicator');
+        if (!indicator) return;
+        
         const isSecure = url.startsWith('https://');
         
         indicator.style.color = isSecure ? 'var(--success-color)' : 'var(--warning-color)';
         indicator.title = isSecure ? 'Conexão segura' : 'Conexão não segura';
+        indicator.style.display = 'flex';
     }
 
     async updateBookmarkButton() {
@@ -495,6 +528,8 @@ class GlassBrowserApp {
         if (!tab) return;
         
         const bookmarkBtn = document.getElementById('bookmark-btn');
+        if (!bookmarkBtn) return;
+        
         const isBookmarked = this.bookmarks.some(bookmark => bookmark.url === tab.url);
         
         bookmarkBtn.classList.toggle('bookmarked', isBookmarked);
@@ -505,26 +540,32 @@ class GlassBrowserApp {
         if (!this.activeTabId) return;
         
         const tab = this.tabs.get(this.activeTabId);
-        if (!tab) return;
+        if (!tab || !window.electronAPI) return;
         
-        const existingBookmark = this.bookmarks.find(b => b.url === tab.url);
-        
-        if (existingBookmark) {
-            // Remover bookmark
-            this.bookmarks = await window.electronAPI.removeBookmark(existingBookmark.id);
-        } else {
-            // Adicionar bookmark
-            this.bookmarks = await window.electronAPI.saveBookmark({
-                url: tab.url,
-                title: tab.title,
-                favicon: tab.favicon
-            });
+        try {
+            const existingBookmark = this.bookmarks.find(b => b.url === tab.url);
+            
+            if (existingBookmark) {
+                // Remover bookmark
+                this.bookmarks = await window.electronAPI.removeBookmark(existingBookmark.id);
+            } else {
+                // Adicionar bookmark
+                this.bookmarks = await window.electronAPI.saveBookmark({
+                    url: tab.url,
+                    title: tab.title,
+                    favicon: tab.favicon
+                });
+            }
+            
+            this.updateBookmarkButton();
+        } catch (error) {
+            console.error('Erro ao gerenciar bookmark:', error);
         }
-        
-        this.updateBookmarkButton();
     }
 
     async saveToHistory(item) {
+        if (!window.electronAPI) return;
+        
         try {
             this.history = await window.electronAPI.saveHistory(item);
         } catch (error) {
@@ -537,22 +578,24 @@ class GlassBrowserApp {
         const sidebarTitle = document.getElementById('sidebar-title');
         const sidebarContent = document.getElementById('sidebar-content');
         
+        if (!sidebar || !sidebarTitle || !sidebarContent) return;
+        
         sidebarTitle.textContent = 'Favoritos';
         sidebarContent.innerHTML = '';
         
         if (this.bookmarks.length === 0) {
-            sidebarContent.innerHTML = '<p>Nenhum favorito encontrado</p>';
+            sidebarContent.innerHTML = '<p style="text-align: center; color: var(--text-secondary); margin: 20px;">Nenhum favorito encontrado</p>';
         } else {
             this.bookmarks.forEach(bookmark => {
                 const item = document.createElement('div');
                 item.className = 'bookmark-item';
                 item.innerHTML = `
-                    <img src="${bookmark.favicon || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMkM0LjY4NiAyIDIgNC42ODYgMiA4QzIgMTEuMzE0IDQuNjg2IDE0IDggMTRDMTEuMzE0IDE0IDE0IDExLjMxNCAxNCA4QzE0IDQuNjg2IDExLjMxNCAyIDggMloiIGZpbGw9IiM5OTk5OTkiLz4KPC9zdmc+'}" alt="Favicon">
-                    <div class="bookmark-info">
-                        <div class="bookmark-title">${bookmark.title}</div>
-                        <div class="bookmark-url">${bookmark.url}</div>
+                    <img src="${bookmark.favicon || this.getDefaultFavicon()}" alt="Favicon" style="width: 16px; height: 16px; margin-right: 12px; border-radius: 2px;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${bookmark.title}</div>
+                        <div style="font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${bookmark.url}</div>
                     </div>
-                    <button class="remove-bookmark-btn" data-id="${bookmark.id}">×</button>
+                    <button class="remove-bookmark-btn" style="width: 20px; height: 20px; border: none; background: transparent; color: var(--text-secondary); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
                 `;
                 
                 item.addEventListener('click', (e) => {
@@ -563,12 +606,18 @@ class GlassBrowserApp {
                 });
                 
                 const removeBtn = item.querySelector('.remove-bookmark-btn');
-                removeBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    this.bookmarks = await window.electronAPI.removeBookmark(bookmark.id);
-                    this.showBookmarks();
-                    this.updateBookmarkButton();
-                });
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        try {
+                            this.bookmarks = await window.electronAPI.removeBookmark(bookmark.id);
+                            this.showBookmarks();
+                            this.updateBookmarkButton();
+                        } catch (error) {
+                            console.error('Erro ao remover bookmark:', error);
+                        }
+                    });
+                }
                 
                 sidebarContent.appendChild(item);
             });
@@ -582,31 +631,47 @@ class GlassBrowserApp {
         const sidebarTitle = document.getElementById('sidebar-title');
         const sidebarContent = document.getElementById('sidebar-content');
         
+        if (!sidebar || !sidebarTitle || !sidebarContent) return;
+        
         sidebarTitle.textContent = 'Histórico';
         sidebarContent.innerHTML = '';
         
         if (this.history.length === 0) {
-            sidebarContent.innerHTML = '<p>Nenhum histórico encontrado</p>';
+            sidebarContent.innerHTML = '<p style="text-align: center; color: var(--text-secondary); margin: 20px;">Nenhum histórico encontrado</p>';
         } else {
             // Agrupar por data
-            const groupedHistory = this.groupHistoryByDate(this.history);
+            const groupedHistory = this.groupHistoryByDate(this.history.slice(0, 50));
             
             Object.keys(groupedHistory).forEach(date => {
                 const dateHeader = document.createElement('h4');
                 dateHeader.textContent = date;
-                dateHeader.className = 'history-date-header';
+                dateHeader.style.cssText = 'color: var(--text-primary); font-size: 14px; font-weight: 600; margin: 16px 0 8px 0; padding-bottom: 4px; border-bottom: 1px solid var(--border-color);';
                 sidebarContent.appendChild(dateHeader);
                 
                 groupedHistory[date].forEach(item => {
                     const historyItem = document.createElement('div');
                     historyItem.className = 'history-item';
+                    historyItem.style.cssText = 'display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 8px;';
+                    
+                    // Tentar extrair favicon da URL
+                    const favicon = this.getFaviconFromUrl(item.url);
+                    
                     historyItem.innerHTML = `
-                        <div class="history-info">
-                            <div class="history-title">${item.title}</div>
-                            <div class="history-url">${item.url}</div>
-                            <div class="history-time">${new Date(item.visitedAt).toLocaleTimeString()}</div>
+                        <img src="${favicon}" alt="Favicon" style="width: 16px; height: 16px; margin-right: 12px; border-radius: 2px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 14px; font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.title}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.url}</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${new Date(item.visitedAt).toLocaleTimeString()}</div>
                         </div>
                     `;
+                    
+                    historyItem.addEventListener('mouseenter', () => {
+                        historyItem.style.background = 'var(--secondary-bg)';
+                    });
+                    
+                    historyItem.addEventListener('mouseleave', () => {
+                        historyItem.style.background = 'transparent';
+                    });
                     
                     historyItem.addEventListener('click', () => {
                         this.navigateToUrl(item.url);
@@ -619,18 +684,32 @@ class GlassBrowserApp {
             
             // Botão para limpar histórico
             const clearBtn = document.createElement('button');
-            clearBtn.className = 'btn-secondary clear-history-btn';
+            clearBtn.className = 'btn-secondary';
+            clearBtn.style.cssText = 'width: 100%; margin-top: 16px;';
             clearBtn.textContent = 'Limpar Histórico';
             clearBtn.addEventListener('click', async () => {
                 if (confirm('Tem certeza que deseja limpar todo o histórico?')) {
-                    this.history = await window.electronAPI.clearHistory();
-                    this.showHistory();
+                    try {
+                        this.history = await window.electronAPI.clearHistory();
+                        this.showHistory();
+                    } catch (error) {
+                        console.error('Erro ao limpar histórico:', error);
+                    }
                 }
             });
             sidebarContent.appendChild(clearBtn);
         }
         
         sidebar.classList.add('visible');
+    }
+
+    getFaviconFromUrl(url) {
+        try {
+            const urlObj = new URL(url);
+            return `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=16`;
+        } catch {
+            return this.getDefaultFavicon();
+        }
     }
 
     groupHistoryByDate(history) {
@@ -660,28 +739,44 @@ class GlassBrowserApp {
     }
 
     hideSidebar() {
-        document.getElementById('sidebar').classList.remove('visible');
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.classList.remove('visible');
+        }
     }
 
     showSettings() {
         const modal = document.getElementById('settings-modal');
+        if (!modal) return;
         
-        // Carregar valores atuais
-        document.getElementById('search-engine').value = this.settings.searchEngine;
-        document.getElementById('homepage').value = this.settings.homepage;
-        document.getElementById('theme').value = this.settings.theme;
-        document.getElementById('block-ads').checked = this.settings.privacy.blockAds;
-        document.getElementById('block-trackers').checked = this.settings.privacy.blockTrackers;
+        // Carregar valores atuais nos campos
+        const searchEngine = document.getElementById('search-engine');
+        const homepage = document.getElementById('homepage');
+        const theme = document.getElementById('theme');
+        const blockAds = document.getElementById('block-ads');
+        const blockTrackers = document.getElementById('block-trackers');
+        
+        if (searchEngine) searchEngine.value = this.settings.searchEngine || 'google';
+        if (homepage) homepage.value = this.settings.homepage || 'https://www.google.com';
+        if (theme) theme.value = this.settings.theme || 'auto';
+        if (blockAds) blockAds.checked = this.settings.privacy?.blockAds ?? true;
+        if (blockTrackers) blockTrackers.checked = this.settings.privacy?.blockTrackers ?? true;
         
         modal.classList.add('visible');
     }
 
     showLoading() {
-        document.getElementById('loading-overlay').classList.add('visible');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('visible');
+        }
     }
 
     hideLoading() {
-        document.getElementById('loading-overlay').classList.remove('visible');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('visible');
+        }
     }
 
     updateTabState(tabId) {
@@ -711,34 +806,9 @@ class GlassBrowserApp {
         }
     }
 
-    toggleDevTools() {
-        if (!this.activeTabId) return;
-        
-        const tab = this.tabs.get(this.activeTabId);
-        if (tab) {
-            if (tab.webview.isDevToolsOpened()) {
-                tab.webview.closeDevTools();
-            } else {
-                tab.webview.openDevTools();
-            }
-        }
-    }
-
     showSuggestions(query) {
         if (!query.trim()) return;
-        
-        // Implementar sugestões baseadas no histórico e bookmarks
-        // Por agora, apenas um placeholder
-    }
-
-    showContextMenu(e) {
-        // Implementar menu de contexto personalizado
-        e.preventDefault();
-    }
-
-    showTabContextMenu(e, tabId) {
-        // Implementar menu de contexto para abas
-        e.preventDefault();
+        // TODO: Implementar sugestões baseadas no histórico e bookmarks
     }
 }
 
