@@ -2,11 +2,11 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 // API segura exposta para o renderer
 contextBridge.exposeInMainWorld('electronAPI', {
-    // Navegação
-    navigate: (url) => ipcRenderer.send('navigate', url),
-    goBack: () => ipcRenderer.send('go-back'),
-    goForward: () => ipcRenderer.send('go-forward'),
-    refresh: () => ipcRenderer.send('refresh'),
+    // Navegação - usar invoke para consistência
+    navigate: (url) => ipcRenderer.invoke('navigate', url),
+    goBack: () => ipcRenderer.invoke('go-back'),
+    goForward: () => ipcRenderer.invoke('go-forward'),
+    refresh: () => ipcRenderer.invoke('refresh'),
     
     // Bookmarks
     getBookmarks: () => ipcRenderer.invoke('get-bookmarks'),
@@ -24,23 +24,53 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
     // Janelas e Abas
     newWindow: (url) => ipcRenderer.invoke('new-window', url),
-    newTab: () => ipcRenderer.send('new-tab'),
-    closeTab: (id) => ipcRenderer.send('close-tab', id),
+    closeWindow: () => ipcRenderer.invoke('close-window'),
+    newTab: () => ipcRenderer.invoke('new-tab'),
+    closeTab: (id) => ipcRenderer.invoke('close-tab', id),
+    
+    // Zoom controls
+    zoomIn: () => ipcRenderer.invoke('zoom-in'),
+    zoomOut: () => ipcRenderer.invoke('zoom-out'),
+    zoomReset: () => ipcRenderer.invoke('zoom-reset'),
     
     // Diálogos
     showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
+    showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
     openExternal: (url) => ipcRenderer.invoke('open-external', url),
+    
+    // App info
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    getAppName: () => ipcRenderer.invoke('get-app-name'),
     
     // Eventos
     on: (channel, callback) => {
-        const validChannels = ['navigate-to', 'new-tab', 'theme-changed'];
+        const validChannels = [
+            'navigate-to', 
+            'new-tab', 
+            'close-tab',
+            'go-back',
+            'go-forward',
+            'reload-page',
+            'theme-changed'
+        ];
         if (validChannels.includes(channel)) {
             ipcRenderer.on(channel, callback);
         }
     },
     
     off: (channel, callback) => {
-        ipcRenderer.off(channel, callback);
+        const validChannels = [
+            'navigate-to', 
+            'new-tab', 
+            'close-tab',
+            'go-back',
+            'go-forward',
+            'reload-page',
+            'theme-changed'
+        ];
+        if (validChannels.includes(channel)) {
+            ipcRenderer.off(channel, callback);
+        }
     },
     
     // Sistema
