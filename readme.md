@@ -81,10 +81,10 @@ npm run build-linux
 ```
 glass-browser/
 ├── src/
-│   ├── main.js                 # Processo principal do Electron
+│   ├── main.js                # Processo principal do Electron
 │   ├── preload.js             # Bridge de segurança
+│   ├── index.html             # Página principal
 │   └── renderer/              # Interface do usuário
-│       ├── index.html         # Página principal
 │       ├── styles/            # Estilos CSS
 │       │   ├── main.css       # Estilos principais
 │       │   ├── glass.css      # Efeitos glassmorphism
