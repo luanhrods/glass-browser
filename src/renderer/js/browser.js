@@ -30,8 +30,10 @@ class GlassBrowserApp {
             if (titlebar) titlebar.style.display = 'flex';
         }
         
-        // Criar primeira aba
-        this.createNewTab('https://www.google.com');
+        // Criar primeira aba - aguardar um pouco para garantir que o DOM está pronto
+        setTimeout(() => {
+            this.createNewTab(this.settings.homepage || 'https://www.google.com');
+        }, 100);
     }
 
     async loadSettings() {
@@ -132,15 +134,17 @@ class GlassBrowserApp {
             const closeBtn = document.getElementById('close-btn');
             
             if (minimizeBtn) minimizeBtn.addEventListener('click', () => {
-                // Implementar minimizar via IPC se necessário
                 console.log('Minimize clicked');
             });
             if (maximizeBtn) maximizeBtn.addEventListener('click', () => {
-                // Implementar maximizar via IPC se necessário
                 console.log('Maximize clicked');
             });
             if (closeBtn) closeBtn.addEventListener('click', () => {
-                window.close();
+                if (window.electronAPI) {
+                    window.electronAPI.closeWindow();
+                } else {
+                    window.close();
+                }
             });
         }
 
@@ -220,29 +224,51 @@ class GlassBrowserApp {
         const tabId = ++this.tabCounter;
         const initialUrl = url || this.settings.homepage || 'https://www.google.com';
         
-        // Criar webview
-        const webview = document.createElement('webview');
-        webview.id = `webview-${tabId}`;
-        webview.className = 'webview';
-        webview.src = initialUrl;
-        webview.allowpopups = true;
-        webview.style.display = 'none'; // Oculto inicialmente
+        // Criar elemento de aba primeiro
+        const tabElement = this.createTabElement(tabId, 'Carregando...', null);
+        
+        // Se não conseguir criar o elemento da aba, algo está errado
+        if (!tabElement) {
+            console.error('Não foi possível criar elemento da aba');
+            return;
+        }
+        
+        // Criar webview - usar iframe como fallback se webview não estiver disponível
+        let webview;
+        try {
+            webview = document.createElement('webview');
+            webview.id = `webview-${tabId}`;
+            webview.className = 'webview';
+            webview.src = initialUrl;
+            webview.allowpopups = true;
+            webview.style.display = 'none';
+        } catch (error) {
+            console.warn('Webview não suportada, usando iframe como fallback');
+            webview = document.createElement('iframe');
+            webview.id = `webview-${tabId}`;
+            webview.className = 'webview';
+            webview.src = initialUrl;
+            webview.style.display = 'none';
+            webview.style.border = 'none';
+            webview.style.width = '100%';
+            webview.style.height = '100%';
+        }
         
         // Adicionar webview ao container
         const webviewContainer = document.getElementById('webview-container');
         if (webviewContainer) {
             webviewContainer.appendChild(webview);
+        } else {
+            console.error('Container de webview não encontrado');
+            return;
         }
-        
-        // Criar elemento de aba
-        const tabElement = this.createTabElement(tabId, 'Nova aba', null);
         
         // Adicionar ao mapa de abas
         this.tabs.set(tabId, {
             element: tabElement,
             webview: webview,
             url: initialUrl,
-            title: 'Nova aba',
+            title: 'Carregando...',
             favicon: null,
             canGoBack: false,
             canGoForward: false,
@@ -260,7 +286,10 @@ class GlassBrowserApp {
 
     createTabElement(tabId, title, favicon) {
         const tabsContainer = document.getElementById('tabs-container');
-        if (!tabsContainer) return null;
+        if (!tabsContainer) {
+            console.error('Container de abas não encontrado');
+            return null;
+        }
         
         const tab = document.createElement('div');
         tab.className = 'tab';
@@ -279,7 +308,7 @@ class GlassBrowserApp {
         
         const closeButton = document.createElement('button');
         closeButton.className = 'tab-close';
-        closeButton.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none"/></svg>';
+        closeButton.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>';
         closeButton.addEventListener('click', (e) => {
             e.stopPropagation();
             this.closeTab(tabId);
@@ -306,81 +335,107 @@ class GlassBrowserApp {
         const tab = this.tabs.get(tabId);
         if (!tab) return;
         
-        webview.addEventListener('dom-ready', () => {
-            tab.isLoading = false;
-            this.updateTabState(tabId);
-        });
-        
-        webview.addEventListener('did-start-loading', () => {
-            tab.isLoading = true;
-            this.showLoading();
-        });
-        
-        webview.addEventListener('did-stop-loading', () => {
-            tab.isLoading = false;
-            this.hideLoading();
-            this.updateTabState(tabId);
-        });
-        
-        webview.addEventListener('page-title-updated', (e) => {
-            tab.title = e.title || 'Sem título';
-            const titleElement = tab.element?.querySelector('.tab-title');
-            if (titleElement) {
-                titleElement.textContent = tab.title;
-            }
+        // Eventos específicos para webview
+        if (webview.tagName.toLowerCase() === 'webview') {
+            webview.addEventListener('dom-ready', () => {
+                tab.isLoading = false;
+                this.updateTabState(tabId);
+            });
             
-            if (tabId === this.activeTabId) {
-                document.title = `${tab.title} - Glass Browser`;
-            }
-        });
-        
-        webview.addEventListener('page-favicon-updated', (e) => {
-            if (e.favicons && e.favicons.length > 0) {
-                tab.favicon = e.favicons[0];
-                const faviconElement = tab.element?.querySelector('.tab-favicon');
-                if (faviconElement) {
-                    faviconElement.src = e.favicons[0];
+            webview.addEventListener('did-start-loading', () => {
+                tab.isLoading = true;
+                this.showLoading();
+            });
+            
+            webview.addEventListener('did-stop-loading', () => {
+                tab.isLoading = false;
+                this.hideLoading();
+                this.updateTabState(tabId);
+            });
+            
+            webview.addEventListener('page-title-updated', (e) => {
+                tab.title = e.title || 'Sem título';
+                const titleElement = tab.element?.querySelector('.tab-title');
+                if (titleElement) {
+                    titleElement.textContent = tab.title;
                 }
-            }
-        });
-        
-        webview.addEventListener('will-navigate', (e) => {
-            tab.url = e.url;
-            if (tabId === this.activeTabId) {
-                const addressInput = document.getElementById('address-input');
-                if (addressInput) {
-                    addressInput.value = e.url;
-                }
-            }
-        });
-        
-        webview.addEventListener('did-navigate', (e) => {
-            tab.url = e.url;
-            if (tabId === this.activeTabId) {
-                const addressInput = document.getElementById('address-input');
-                if (addressInput) {
-                    addressInput.value = e.url;
-                }
-                this.updateNavigationButtons();
-                this.updateSecurityIndicator(e.url);
                 
-                // Salvar no histórico
-                this.saveToHistory({
-                    url: e.url,
-                    title: tab.title
-                });
-            }
-        });
-        
-        webview.addEventListener('new-window', (e) => {
-            e.preventDefault();
-            this.createNewTab(e.url);
-        });
+                if (tabId === this.activeTabId) {
+                    document.title = `${tab.title} - Glass Browser`;
+                }
+            });
+            
+            webview.addEventListener('page-favicon-updated', (e) => {
+                if (e.favicons && e.favicons.length > 0) {
+                    tab.favicon = e.favicons[0];
+                    const faviconElement = tab.element?.querySelector('.tab-favicon');
+                    if (faviconElement) {
+                        faviconElement.src = e.favicons[0];
+                    }
+                }
+            });
+            
+            webview.addEventListener('will-navigate', (e) => {
+                tab.url = e.url;
+                if (tabId === this.activeTabId) {
+                    const addressInput = document.getElementById('address-input');
+                    if (addressInput) {
+                        addressInput.value = e.url;
+                    }
+                }
+            });
+            
+            webview.addEventListener('did-navigate', (e) => {
+                tab.url = e.url;
+                if (tabId === this.activeTabId) {
+                    const addressInput = document.getElementById('address-input');
+                    if (addressInput) {
+                        addressInput.value = e.url;
+                    }
+                    this.updateNavigationButtons();
+                    this.updateSecurityIndicator(e.url);
+                    
+                    // Salvar no histórico
+                    this.saveToHistory({
+                        url: e.url,
+                        title: tab.title
+                    });
+                }
+            });
+            
+            webview.addEventListener('new-window', (e) => {
+                e.preventDefault();
+                this.createNewTab(e.url);
+            });
+        } else {
+            // Eventos para iframe (fallback)
+            webview.addEventListener('load', () => {
+                tab.isLoading = false;
+                this.hideLoading();
+                this.updateTabState(tabId);
+                
+                // Tentar obter o título da página (limitado por CORS)
+                try {
+                    const title = webview.contentDocument?.title || 'Página carregada';
+                    tab.title = title;
+                    const titleElement = tab.element?.querySelector('.tab-title');
+                    if (titleElement) {
+                        titleElement.textContent = tab.title;
+                    }
+                    
+                    if (tabId === this.activeTabId) {
+                        document.title = `${tab.title} - Glass Browser`;
+                    }
+                } catch (e) {
+                    // Ignorar erros de CORS
+                }
+            });
+        }
     }
 
     switchToTab(tabId) {
         // Desativar aba atual
-        if (this.activeTabId) {
+        if (this.activeTabId && this.activeTabId !== tabId) {
             const currentTab = this.tabs.get(this.activeTabId);
             if (currentTab) {
                 currentTab.element?.classList.remove('active');
@@ -462,6 +517,8 @@ class GlassBrowserApp {
         if (addressInput) {
             addressInput.value = url;
         }
+        
+        this.showLoading();
     }
 
     isValidUrl(string) {
@@ -476,16 +533,22 @@ class GlassBrowserApp {
     goBack() {
         if (!this.activeTabId) return;
         const tab = this.tabs.get(this.activeTabId);
-        if (tab && tab.webview.canGoBack()) {
+        if (tab && tab.webview.tagName.toLowerCase() === 'webview' && tab.webview.canGoBack && tab.webview.canGoBack()) {
             tab.webview.goBack();
+        } else if (tab && tab.webview.tagName.toLowerCase() === 'iframe') {
+            // Para iframe, usar history do navegador (limitado)
+            window.history.back();
         }
     }
 
     goForward() {
         if (!this.activeTabId) return;
         const tab = this.tabs.get(this.activeTabId);
-        if (tab && tab.webview.canGoForward()) {
+        if (tab && tab.webview.tagName.toLowerCase() === 'webview' && tab.webview.canGoForward && tab.webview.canGoForward()) {
             tab.webview.goForward();
+        } else if (tab && tab.webview.tagName.toLowerCase() === 'iframe') {
+            // Para iframe, usar history do navegador (limitado)
+            window.history.forward();
         }
     }
 
@@ -493,7 +556,13 @@ class GlassBrowserApp {
         if (!this.activeTabId) return;
         const tab = this.tabs.get(this.activeTabId);
         if (tab) {
-            tab.webview.reload();
+            if (tab.webview.tagName.toLowerCase() === 'webview') {
+                tab.webview.reload();
+            } else {
+                // Para iframe
+                tab.webview.src = tab.webview.src;
+            }
+            this.showLoading();
         }
     }
 
@@ -506,8 +575,14 @@ class GlassBrowserApp {
         const backBtn = document.getElementById('back-btn');
         const forwardBtn = document.getElementById('forward-btn');
         
-        if (backBtn) backBtn.disabled = !tab.webview.canGoBack();
-        if (forwardBtn) forwardBtn.disabled = !tab.webview.canGoForward();
+        if (tab.webview.tagName.toLowerCase() === 'webview') {
+            if (backBtn) backBtn.disabled = !tab.webview.canGoBack || !tab.webview.canGoBack();
+            if (forwardBtn) forwardBtn.disabled = !tab.webview.canGoForward || !tab.webview.canGoForward();
+        } else {
+            // Para iframe, assumir que podem navegar (limitado)
+            if (backBtn) backBtn.disabled = false;
+            if (forwardBtn) forwardBtn.disabled = false;
+        }
     }
 
     updateSecurityIndicator(url) {
@@ -814,5 +889,45 @@ class GlassBrowserApp {
 
 // Inicializar aplicativo quando DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
+    // Verificar se todos os elementos necessários estão presentes
+    const requiredElements = [
+        'address-input', 'back-btn', 'forward-btn', 'refresh-btn',
+        'bookmark-btn', 'bookmarks-btn', 'history-btn', 'settings-btn',
+        'new-tab-btn', 'tabs-container', 'webview-container', 'sidebar'
+    ];
+    
+    const missingElements = requiredElements.filter(id => !document.getElementById(id));
+    
+    if (missingElements.length > 0) {
+        console.error('Elementos necessários não encontrados:', missingElements);
+        
+        // Tentar recriar elementos críticos
+        const webviewContainer = document.getElementById('webview-container');
+        const tabsContainer = document.getElementById('tabs-container');
+        
+        if (!webviewContainer) {
+            const contentArea = document.querySelector('.content-area');
+            if (contentArea) {
+                const container = document.createElement('div');
+                container.id = 'webview-container';
+                container.className = 'webview-container';
+                container.style.cssText = 'flex: 1; position: relative; background: var(--primary-bg);';
+                contentArea.insertBefore(container, contentArea.firstChild);
+            }
+        }
+        
+        if (!tabsContainer) {
+            const tabBar = document.querySelector('.tab-bar');
+            if (tabBar) {
+                const container = document.createElement('div');
+                container.id = 'tabs-container';
+                container.className = 'tabs-container';
+                container.style.cssText = 'flex: 1; display: flex; align-items: center; overflow-x: auto;';
+                tabBar.insertBefore(container, tabBar.firstChild);
+            }
+        }
+    }
+    
+    // Inicializar aplicativo
     window.browserApp = new GlassBrowserApp();
 });
