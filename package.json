@@ -1,127 +1,73 @@
 {
-  "name": "glassbrowser",
+  "name": "glass-browser",
   "version": "1.0.0",
-  "description": "Navegador moderno com design glass-like inspirado no Safari",
+  "description": "Um navegador moderno com efeitos glassmorphism",
   "main": "src/main.js",
-  "homepage": "https://github.com/luanhrods/glass-browser",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/luanhrods/glass-browser.git"
-  },
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder",
-    "build-win": "electron-builder --win --publish=never",
-    "build-mac": "electron-builder --mac --publish=never",
-    "build-linux": "electron-builder --linux --publish=never",
-    "build-all": "electron-builder --win --mac --linux --publish=never",
+    "dist": "electron-builder --publish=never",
     "pack": "electron-builder --dir",
-    "dist": "npm run build",
-    "release": "electron-builder --publish=always",
     "postinstall": "electron-builder install-app-deps"
   },
   "keywords": [
     "browser",
     "electron",
-    "glass",
-    "safari",
-    "modern",
-    "glassmorphism"
+    "glassmorphism",
+    "modern"
   ],
-  "author": {
-    "name": "Eirus Technology by Enchantè",
-    "email": "hey@enchante.digital"
-  },
+  "author": "Glass Browser Team",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^37.2.6",
-    "electron-builder": "^24.13.3"
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
   },
   "dependencies": {
     "electron-store": "^8.1.0",
-    "electron-updater": "^6.3.10",
-    "fuse.js": "^7.0.0"
+    "electron-updater": "^6.1.4"
   },
   "build": {
     "appId": "com.glassbrowser.app",
     "productName": "Glass Browser",
     "directories": {
-      "buildResources": "build",
       "output": "dist"
     },
     "files": [
       "src/**/*",
-      "assets/**/*",
       "node_modules/**/*",
-      "!node_modules/.cache",
-      "!node_modules/**/{test,tests,testing,__tests__,spec,specs,__specs__}/**/*",
-      "!node_modules/**/*.{md,MD,txt,TXT}",
-      "!node_modules/**/{LICENSE*,LICENCE*,NOTICE*,CHANGELOG*,README*,readme*}",
-      "!**/node_modules/*/{man,doc,docs,example,examples}/**/*",
-      "!**/node_modules/**/{jest,coverage,nyc_output}/**/*"
+      "package.json"
     ],
+    "mac": {
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.productivity"
+    },
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
         {
           "target": "nsis",
           "arch": ["x64"]
         }
-      ],
-      "artifactName": "${productName}-${version}-${arch}.${ext}",
-      "publisherName": "Eirus Technology"
+      ]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "category": "Network"
     },
     "nsis": {
       "oneClick": false,
-      "allowElevation": true,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "deleteAppDataOnUninstall": false,
-      "runAfterFinish": true,
-      "artifactName": "${productName}-Setup-${version}.${ext}"
-    },
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": ["universal"]
-        }
-      ],
-      "category": "public.app-category.productivity",
-      "artifactName": "${productName}-${version}-${arch}.${ext}",
-      "hardenedRuntime": true,
-      "notarize": false
-    },
-    "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": ["x64"]
-        }
-      ],
-      "category": "Network",
-      "artifactName": "${productName}-${version}-${arch}.${ext}",
-      "desktop": {
-        "Comment": "Navegador moderno com design glass-like",
-        "Keywords": "browser;web;internet;glassmorphism;"
-      }
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "luanhrods",
-        "repo": "glass-browser",
-        "private": false,
-        "releaseType": "release"
-      }
-    ],
-    "compression": "maximum",
-    "removePackageScripts": true,
-    "nodeGypRebuild": false,
-    "buildDependenciesFromSource": false
+      "deleteAppDataOnUninstall": true
+    }
   },
-  "engines": {
-    "node": ">=18.0.0"
+  "homepage": "https://github.com/glassbrowser/glass-browser",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/glassbrowser/glass-browser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/glassbrowser/glass-browser/issues"
   }
 }
