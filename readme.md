@@ -1,223 +1,121 @@
-# Glass Browser 🌐
+# Glass Browser - Correções Implementadas
 
-Um navegador moderno e elegante com design glass-like, inspirado no Safari e construído com Electron.js.
+## Problemas Identificados e Soluções
 
-## ✨ Características Principais
+### 1. **Arquivos CSS Ausentes**
+- **Problema**: O HTML referenciava `main.css` e `glass.css` que não existiam
+- **Solução**: Criados os arquivos CSS com todos os estilos necessários
 
-### 🎨 Design Moderno
-- **Interface Glass-like**: Efeitos de glassmorphism com blur e transparência
-- **Inspirado no Safari**: Usabilidade e design similares ao Safari, mesmo no Windows
-- **Tema Adaptável**: Suporte a temas claro, escuro e automático
-- **Animações Suaves**: Transições e efeitos visuais modernos
-
-### 🔧 Funcionalidades Core
-- **Sistema de Abas**: Gerenciamento completo de múltiplas abas
-- **Navegação Intuitiva**: Botões de voltar, avançar, refresh e barra de endereços inteligente
-- **Motor de Busca**: Google como padrão, com suporte a Bing e DuckDuckGo
-- **Bookmarks**: Sistema completo de favoritos com organização
-- **Histórico**: Histórico navegação com agrupamento por data
-- **Configurações**: Painel completo de configurações personalizáveis
-
-### ⌨️ Atalhos de Teclado (Estilo Safari)
-- `Cmd/Ctrl + T` - Nova aba
-- `Cmd/Ctrl + W` - Fechar aba
-- `Cmd/Ctrl + N` - Nova janela  
-- `Cmd/Ctrl + R` - Atualizar página
-- `Cmd/Ctrl + L` - Focar barra de endereços
-- `Cmd/Ctrl + D` - Adicionar bookmark
-- `Cmd/Ctrl + H` - Mostrar histórico
-- `Alt + ←/→` - Voltar/Avançar
-- `F12` - Ferramentas de desenvolvedor
-
-### 🔒 Privacidade e Segurança
-- **Bloqueio de Anúncios**: Sistema básico integrado
-- **Indicador de Segurança**: Mostra conexões HTTPS
-- **Sandboxing**: Isolamento de processos para segurança
-- **Context Isolation**: Separação entre contextos para maior segurança
-
-### 🧩 Compatibilidade com Extensões
-- Suporte básico para extensões do Chrome
-- Arquitetura preparada para expansão
-
-## 🚀 Instalação e Uso
-
-### Pré-requisitos
-- Node.js 18+ 
-- npm ou yarn
-
-### Instalação
-```bash
-# Clonar o repositório
-git clone https://github.com/seu-usuario/glass-browser.git
-cd glass-browser
-
-# Instalar dependências
-npm install
-
-# Executar em modo desenvolvimento
-npm run dev
-
-# Ou executar versão de produção
-npm start
-```
-
-### Build para Distribuição
-```bash
-# Build para todas as plataformas
-npm run build
-
-# Build específico para Windows
-npm run build-win
-
-# Build específico para macOS  
-npm run build-mac
-
-# Build específico para Linux
-npm run build-linux
-```
-
-## 📁 Estrutura do Projeto
-
+### 2. **Estrutura de Pastas**
+Certifique-se de que sua estrutura esteja assim:
 ```
 glass-browser/
 ├── src/
-│   ├── main.js                # Processo principal do Electron
-│   ├── preload.js             # Bridge de segurança
-│   ├── index.html             # Página principal
-│   └── renderer/              # Interface do usuário
-│       ├── styles/            # Estilos CSS
-│       │   ├── main.css       # Estilos principais
-│       │   ├── glass.css      # Efeitos glassmorphism
-│       │   └── components.css # Componentes específicos
-│       └── js/                # Lógica JavaScript
-│           ├── browser.js     # Lógica principal do navegador
-│           ├── tabs.js        # Gerenciamento de abas
-│           ├── bookmarks.js   # Sistema de favoritos
-│           └── settings.js    # Configurações
-├── assets/                    # Recursos estáticos
-│   ├── icon.png              # Ícone do aplicativo
-│   ├── icon.ico              # Ícone para Windows
-│   └── icon.icns             # Ícone para macOS
-├── package.json              # Configuração do projeto
-└── README.md                 # Documentação
+│   ├── main.js
+│   ├── preload.js
+│   ├── index.html
+│   ├── main.css          # ← NOVO
+│   ├── glass.css         # ← NOVO
+│   ├── browser.js        # ← ATUALIZADO
+│   └── settings.js
+├── assets/
+│   ├── icon.png
+│   ├── icon.ico
+│   └── icon.icns
+├── package.json           # ← NOVO
+└── README.md
 ```
 
-## ⚙️ Configurações Disponíveis
+### 3. **Correções no JavaScript**
+- Melhorado o tratamento de erros na criação de abas
+- Adicionado fallback para iframe quando webview não está disponível
+- Corrigidos os event listeners e seletores CSS
+- Melhorada a inicialização do aplicativo
 
-### Geral
-- **Motor de Busca**: Google, Bing ou DuckDuckGo
-- **Página Inicial**: URL personalizada
-- **Tema**: Automático, claro ou escuro
+### 4. **Melhorias na Interface**
+- Sistema de temas completo (claro/escuro/automático)
+- Efeitos glassmorphism aprimorados
+- Responsividade melhorada
+- Animações suaves
 
-### Privacidade
-- Bloqueio de anúncios
-- Bloqueio de rastreadores  
-- Política de cookies
+## Como Corrigir seu Projeto
 
-### Aparência
-- Tamanho da fonte
-- Nível de zoom padrão
-- Habilitação de animações
+### Passo 1: Criar os Arquivos CSS
+1. Copie o conteúdo do `main.css` para `src/main.css`
+2. Copie o conteúdo do `glass.css` para `src/glass.css`
 
-### Avançado
-- Aceleração por hardware
-- Configurações de proxy
-- Limpeza de dados
-- Import/Export de configurações
+### Passo 2: Atualizar o JavaScript
+1. Substitua o conteúdo do `browser.js` pela versão corrigida
 
-## 🔧 Desenvolvimento
-
-### Tecnologias Utilizadas
-- **Electron 37.2.6**: Framework principal
-- **Node.js 22.17.1**: Runtime JavaScript
-- **Chromium 138**: Engine de renderização
-- **CSS3**: Efeitos glassmorphism e animações
-- **JavaScript ES2024+**: Lógica moderna
-
-### Arquitetura
-O navegador segue a arquitetura padrão do Electron com:
-
-1. **Processo Principal** (`main.js`): Gerencia janelas e sistema
-2. **Processo Renderer** (`renderer/`): Interface do usuário
-3. **Preload Script** (`preload.js`): Bridge segura entre processos
-
-### Recursos de Segurança
-- Context Isolation habilitado
-- Node Integration desabilitado
-- Sandbox ativado para webviews
-- CSP (Content Security Policy)
-- Validação de URLs
-
-## 🎨 Design System
-
-### Cores
-```css
---primary-bg: rgba(255, 255, 255, 0.05)
---secondary-bg: rgba(255, 255, 255, 0.1)  
---accent-color: #007AFF
---glass-bg: rgba(255, 255, 255, 0.08)
---glass-border: rgba(255, 255, 255, 0.2)
+### Passo 3: Atualizar package.json
+1. Use o `package.json` fornecido ou adicione as dependências:
+```bash
+npm install electron electron-store electron-updater
 ```
 
-### Efeitos Glass
-- **Blur**: 20px backdrop-filter
-- **Transparência**: 8-12% de opacidade
-- **Bordas**: 15-25% de opacidade
-- **Sombras**: Múltiplas camadas para profundidade
+### Passo 4: Testar a Aplicação
+```bash
+npm start
+```
 
-## 📱 Responsividade
+## Principais Melhorias
 
-O navegador se adapta a diferentes tamanhos de tela:
-- **Desktop**: Layout completo com sidebar
-- **Tablets**: Interface compacta
-- **Telas pequenas**: Elementos redimensionados
+### CSS
+- **Variáveis CSS**: Sistema completo de cores e tamanhos
+- **Temas**: Suporte a tema claro, escuro e automático
+- **Glassmorphism**: Efeitos de vidro com backdrop-filter
+- **Responsividade**: Funciona bem em diferentes tamanhos de tela
+- **Animações**: Transições suaves e loading spinners
 
-## 🚧 Roadmap
+### JavaScript
+- **Tratamento de Erros**: Melhor handling de elementos ausentes
+- **Compatibilidade**: Fallback para iframe quando webview não disponível
+- **Inicialização**: Verificação de elementos necessários
+- **Performance**: Otimizações para melhor desempenho
 
-### Versão 1.1
-- [ ] Sistema completo de extensões
-- [ ] Modo privado/incógnito
-- [ ] Sincronização na nuvem
-- [ ] Gestos de navegação
+### Funcionalidades
+- **Abas**: Sistema completo de gerenciamento de abas
+- **Navegação**: Botões voltar/avançar funcionais
+- **Favoritos**: Sistema de bookmarks
+- **Histórico**: Histórico de navegação
+- **Configurações**: Modal de configurações funcional
 
-### Versão 1.2  
-- [ ] Downloads integrados
-- [ ] Bloqueador de anúncios avançado
-- [ ] Suporte a PWAs
-- [ ] Modo leitura
+## Solução de Problemas
 
-### Versão 2.0
-- [ ] Motor de busca próprio
-- [ ] Sistema de perfis
-- [ ] Controles parentais
-- [ ] VPN integrada
+### Se o navegador ainda não funcionar:
 
-## 🤝 Contribuição
+1. **Verifique o Console**: Abra DevTools (F12) e veja se há erros
+2. **Elementos Ausentes**: Certifique-se de que todos os IDs estão corretos no HTML
+3. **Webview**: Se webview não funcionar, o fallback para iframe será usado automaticamente
+4. **Permissões**: Certifique-se de que o Electron tem permissão para webview
 
-Contribuições são bem-vindas! Por favor:
+### Problemas Comuns:
 
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+**CSS não carrega:**
+- Verifique se os arquivos CSS estão na pasta `src/`
+- Confirme que os nomes dos arquivos estão corretos
 
-## 📄 Licença
+**Abas não funcionam:**
+- Verifique se o elemento `tabs-container` existe
+- Confirme que o JavaScript está sendo executado após o DOM carregar
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para detalhes.
+**Webview não carrega:**
+- Certifique-se de que `webviewTag: true` está no webPreferences
+- O fallback para iframe será usado automaticamente
 
-## 🙏 Agradecimentos
+## Recursos Implementados
 
-- Inspiração no design do Safari da Apple
-- Comunidade Electron.js
-- Bibliotecas de código aberto utilizadas
+- ✅ Interface moderna com glassmorphism
+- ✅ Sistema de abas funcional
+- ✅ Navegação (voltar/avançar/recarregar)
+- ✅ Barra de endereços com pesquisa
+- ✅ Sistema de favoritos
+- ✅ Histórico de navegação
+- ✅ Modal de configurações
+- ✅ Temas claro/escuro/automático
+- ✅ Atalhos de teclado
+- ✅ Sidebar responsiva
+- ✅ Loading states
+- ✅ Tratamento de erros
 
-## 📞 Contato
-
-- **Website**: [glass-browser.com](https://glass-browser.com)
-- **Issues**: [GitHub Issues](https://github.com/seu-usuario/glass-browser/issues)
-- **Email**: contato@glass-browser.com
-
----
-
-**Glass Browser** - Navegação moderna com elegância e simplicidade. 🚀
+O navegador agora deve funcionar corretamente com uma interface moderna e todas as funcionalidades básicas implementadas.
