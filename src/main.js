@@ -330,6 +330,50 @@ class GlassBrowser {
             return app.getName();
         });
 
+        // Navigation controls
+        ipcMain.handle('navigate', (event, url) => {
+            const window = BrowserWindow.fromWebContents(event.sender);
+            if (window) {
+                window.webContents.send('navigate-to', url);
+            }
+        });
+
+        ipcMain.handle('go-back', (event) => {
+            const window = BrowserWindow.fromWebContents(event.sender);
+            if (window) {
+                window.webContents.send('go-back');
+            }
+        });
+
+        ipcMain.handle('go-forward', (event) => {
+            const window = BrowserWindow.fromWebContents(event.sender);
+            if (window) {
+                window.webContents.send('go-forward');
+            }
+        });
+
+        ipcMain.handle('refresh', (event) => {
+            const window = BrowserWindow.fromWebContents(event.sender);
+            if (window) {
+                window.webContents.send('reload-page');
+            }
+        });
+
+        // Tab management
+        ipcMain.handle('new-tab', (event) => {
+            const window = BrowserWindow.fromWebContents(event.sender);
+            if (window) {
+                window.webContents.send('new-tab');
+            }
+        });
+
+        ipcMain.handle('close-tab', (event, id) => {
+            const window = BrowserWindow.fromWebContents(event.sender);
+            if (window) {
+                window.webContents.send('close-tab', id);
+            }
+        });
+
         // Zoom controls
         ipcMain.handle('zoom-in', (event) => {
             const webContents = event.sender;
