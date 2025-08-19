@@ -218,6 +218,33 @@
     </div>
 
     <!-- Scripts -->
+    <script>
+        // Verificar se estamos no Electron
+        const isElectron = typeof window !== 'undefined' && window.electronAPI;
+        
+        if (!isElectron) {
+            console.warn('Executando fora do Electron - algumas funcionalidades podem não funcionar');
+            
+            // Mock básico para desenvolvimento
+            window.electronAPI = {
+                getSettings: () => Promise.resolve({
+                    searchEngine: 'google',
+                    homepage: 'https://www.google.com',
+                    theme: 'auto',
+                    privacy: { blockAds: true, blockTrackers: true }
+                }),
+                saveSettings: (settings) => Promise.resolve(settings),
+                getBookmarks: () => Promise.resolve([]),
+                saveBookmark: (bookmark) => Promise.resolve([bookmark]),
+                removeBookmark: (id) => Promise.resolve([]),
+                getHistory: () => Promise.resolve([]),
+                saveHistory: (item) => Promise.resolve([item]),
+                clearHistory: () => Promise.resolve([]),
+                on: () => {},
+                platform: 'web'
+            };
+        }
+    </script>
     <script src="browser.js"></script>
     <script src="settings.js"></script>
 </body>
