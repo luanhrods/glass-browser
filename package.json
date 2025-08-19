@@ -1,0 +1,190 @@
+{
+  "name": "glassbrowser",
+  "version": "1.0.0",
+  "description": "Navegador moderno com design glass-like inspirado no Safari",
+  "main": "src/main.js",
+  "homepage": "https://github.com/luanhrods/glass-browser",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/luanhrods/glass-browser.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win --publish=never",
+    "build-mac": "electron-builder --mac --publish=never",
+    "build-linux": "electron-builder --linux --publish=never",
+    "build-all": "electron-builder --win --mac --linux --publish=never",
+    "pack": "electron-builder --dir",
+    "dist": "npm run build",
+    "release": "electron-builder --publish=always",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "browser",
+    "electron",
+    "glass",
+    "safari",
+    "modern",
+    "glassmorphism"
+  ],
+  "author": {
+    "name": "Eirus Technology by Enchantè",
+    "email": "hey@enchante.digital"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "electron-store": "^10.0.0",
+    "fuse.js": "^7.0.0"
+  },
+  "build": {
+    "appId": "com.glassbrowser.app",
+    "productName": "Glass Browser",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "node_modules/**/*",
+      "!node_modules/.cache",
+      "!node_modules/**/{test,tests,testing,__tests__,spec,specs,__specs__}/**/*",
+      "!node_modules/**/*.{md,MD,txt,TXT}",
+      "!node_modules/**/{LICENSE*,LICENCE*,NOTICE*,CHANGELOG*,README*,readme*}",
+      "!**/node_modules/*/{man,doc,docs,example,examples}/**/*",
+      "!**/node_modules/**/{jest,coverage,nyc_output}/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/",
+        "to": "assets/"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "publisherName": "Eirus Technology"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["universal"]
+        },
+        {
+          "target": "zip",
+          "arch": ["universal"]
+        }
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.productivity",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "hardenedRuntime": true,
+      "notarize": false
+    },
+    "dmg": {
+      "background": "assets/dmg-background.png",
+      "iconSize": 100,
+      "contents": [
+        {
+          "x": 380,
+          "y": 280,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 110,
+          "y": 280,
+          "type": "file"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 400
+      }
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "Network",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "desktop": {
+        "Icon": "glass-browser",
+        "Comment": "Navegador moderno com design glass-like",
+        "Keywords": "browser;web;internet;glassmorphism;"
+      }
+    },
+    "appImage": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "seu-usuario",
+        "repo": "glass-browser",
+        "private": false,
+        "releaseType": "release"
+      }
+    ],
+    "compression": "maximum",
+    "removePackageScripts": true,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
