@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glass Browser</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/glass.css">
+    <link rel="stylesheet" href="styles/components.css">
+</head>
+<body>
+    <!-- Barra de título customizada para Windows -->
+    <div class="titlebar" id="titlebar">
+        <div class="titlebar-drag"></div>
+        <div class="titlebar-controls">
+            <button class="titlebar-button" id="minimize-btn">
+                <svg width="10" height="10" viewBox="0 0 10 10">
+                    <rect x="0" y="4" width="10" height="1"/>
+                </svg>
+            </button>
+            <button class="titlebar-button" id="maximize-btn">
+                <svg width="10" height="10" viewBox="0 0 10 10">
+                    <rect x="0" y="0" width="10" height="10" fill="none" stroke="currentColor"/>
+                </svg>
+            </button>
+            <button class="titlebar-button close" id="close-btn">
+                <svg width="10" height="10" viewBox="0 0 10 10">
+                    <line x1="1" y1="1" x2="9" y2="9"/>
+                    <line x1="9" y1="1" x2="1" y2="9"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Barra de ferramentas principal -->
+    <div class="toolbar glass-effect">
+        <div class="toolbar-section">
+            <button class="nav-button" id="back-btn" disabled>
+                <svg width="16" height="16" viewBox="0 0 16 16">
+                    <path d="M8.5 2.5L3 8l5.5 5.5" stroke="currentColor" fill="none"/>
+                </svg>
+            </button>
+            <button class="nav-button" id="forward-btn" disabled>
+                <svg width="16" height="16" viewBox="0 0 16 16">
+                    <path d="M7.5 2.5L13 8l-5.5 5.5" stroke="currentColor" fill="none"/>
+                </svg>
+            </button>
+            <button class="nav-button" id="refresh-btn">
+                <svg width="16" height="16" viewBox="0 0 16 16">
+                    <path d="M2.5 8A5.5 5.5 0 0 1 8 2.5V1l3 3-3 3V5.5A3.5 3.5 0 0 0 4.5 9" stroke="currentColor" fill="none"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="address-bar-container">
+            <div class="address-bar glass-effect">
+                <div class="security-indicator" id="security-indicator">
+                    <svg width="12" height="12" viewBox="0 0 12 12">
+                        <path d="M6 1L2 3v3c0 2.5 2.5 5 4 5s4-2.5 4-5V3L6 1z" stroke="currentColor" fill="none"/>
+                    </svg>
+                </div>
+                <input type="text" id="address-input" placeholder="Pesquisar no Google ou inserir URL" autocomplete="off">
+                <button class="bookmark-btn" id="bookmark-btn">
+                    <svg width="14" height="14" viewBox="0 0 14 14">
+                        <path d="M3 2v10l4-3 4 3V2H3z" stroke="currentColor" fill="none"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="toolbar-section">
+            <button class="toolbar-btn" id="bookmarks-btn" title="Bookmarks">
+                <svg width="16" height="16" viewBox="0 0 16 16">
+                    <path d="M4 2v12l4-3 4 3V2H4z" stroke="currentColor" fill="none"/>
+                </svg>
+            </button>
+            <button class="toolbar-btn" id="history-btn" title="Histórico">
+                <svg width="16" height="16" viewBox="0 0 16 16">
+                    <circle cx="8" cy="8" r="6" stroke="currentColor" fill="none"/>
+                    <path d="M8 4v4l3 2" stroke="currentColor" fill="none"/>
+                </svg>
+            </button>
+            <button class="toolbar-btn" id="settings-btn" title="Configurações">
+                <svg width="16" height="16" viewBox="0 0 16 16">
+                    <circle cx="8" cy="8" r="2" stroke="currentColor" fill="none"/>
+                    <path d="M8 1v2m0 10v2M15 8h-2M3 8H1m11.36-5.36l-1.42 1.42M4.64 11.36L3.22 12.78M15 8h-2" stroke="currentColor" fill="none"/>
+                </svg>
+            </button>
+            <button class="toolbar-btn" id="menu-btn" title="Menu">
+                <svg width="16" height="16" viewBox="0 0 16 16">
+                    <circle cx="8" cy="3" r="1"/>
+                    <circle cx="8" cy="8" r="1"/>
+                    <circle cx="8" cy="13" r="1"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Área de abas -->
+    <div class="tab-bar glass-effect" id="tab-bar">
+        <div class="tabs-container" id="tabs-container">
+            <!-- Abas serão inseridas aqui dinamicamente -->
+        </div>
+        <button class="new-tab-btn" id="new-tab-btn">
+            <svg width="12" height="12" viewBox="0 0 12 12">
+                <path d="M6 1v10M1 6h10" stroke="currentColor" fill="none"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Área principal do conteúdo -->
+    <div class="content-area" id="content-area">
+        <div class="webview-container" id="webview-container">
+            <!-- WebViews serão inseridas aqui -->
+        </div>
+    </div>
+
+    <!-- Sidebar para bookmarks/histórico -->
+    <div class="sidebar glass-effect" id="sidebar">
+        <div class="sidebar-header">
+            <h3 id="sidebar-title">Bookmarks</h3>
+            <button class="close-sidebar-btn" id="close-sidebar-btn">
+                <svg width="12" height="12" viewBox="0 0 12 12">
+                    <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none"/>
+                </svg>
+            </button>
+        </div>
+        <div class="sidebar-content" id="sidebar-content">
+            <!-- Conteúdo da sidebar -->
+        </div>
+    </div>
+
+    <!-- Modal de configurações -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal glass-effect">
+            <div class="modal-header">
+                <h2>Configurações</h2>
+                <button class="close-modal-btn" id="close-settings-btn">
+                    <svg width="16" height="16" viewBox="0 0 16 16">
+                        <path d="M1 1l14 14M15 1L1 15" stroke="currentColor" fill="none"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="settings-section">
+                    <h3>Geral</h3>
+                    <div class="setting-item">
+                        <label for="search-engine">Motor de Busca Padrão:</label>
+                        <select id="search-engine">
+                            <option value="google">Google</option>
+                            <option value="bing">Bing</option>
+                            <option value="duckduckgo">DuckDuckGo</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="homepage">Página Inicial:</label>
+                        <input type="url" id="homepage" placeholder="https://www.google.com">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Aparência</h3>
+                    <div class="setting-item">
+                        <label for="theme">Tema:</label>
+                        <select id="theme">
+                            <option value="auto">Automático</option>
+                            <option value="light">Claro</option>
+                            <option value="dark">Escuro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Privacidade</h3>
+                    <div class="setting-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="block-ads">
+                            <span class="checkmark"></span>
+                            Bloquear anúncios
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="block-trackers">
+                            <span class="checkmark"></span>
+                            Bloquear rastreadores
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancel-settings-btn">Cancelar</button>
+                <button class="btn-primary" id="save-settings-btn">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de loading -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="js/browser.js"></script>
+    <script src="js/tabs.js"></script>
+    <script src="js/bookmarks.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+</html>
